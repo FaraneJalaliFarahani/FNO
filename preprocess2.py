@@ -58,9 +58,14 @@ def main():
         x = torch.zeros(n_srs, 768)
         for j in id2sr:
             sr = id2sr[j]
+            print(sr)
+            print(c_sr_embs[c])
             if sr in c_sr_embs[c]:
+                print("not-NAN")
+           
                 x[j] = torch.tensor(c_sr_embs[c][sr])
             else:
+                print("NAN")
                 x[j] = np.nan
         nan_mask = torch.isnan(x)
         mean_x = torch.tensor(np.nanmean(x, axis=0)).repeat(x.size(0), 1)
