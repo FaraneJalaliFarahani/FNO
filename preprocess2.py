@@ -60,7 +60,7 @@ def main():
             sr = id2sr[j]
             print(sr)
             print(c_sr_embs[c])
-            x[j] = torch.tensor(c_sr_embs[c][sr])
+            x[j] = torch.tensor(c_sr_embs[i][j])
             #x[j] = np.nan
         nan_mask = torch.isnan(x)
         mean_x = torch.tensor(np.nanmean(x, axis=0)).repeat(x.size(0), 1)
