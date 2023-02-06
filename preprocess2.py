@@ -26,7 +26,7 @@ def main():
     print('Processing {}...'.format(year))
 
     # Load concepts, concept embeddings, concept counts, and network
-    with open(inpath + 'networks/network_{}.p'.format(year), 'rb') as f:
+    with open(inpath + 'network_{}.p'.format(year), 'rb') as f:
         G = pickle.load(f)
     # with open(inpath + 'concepts/concepts_{}.txt'.format(year), 'r') as f:
     #     concepts = set(f.read().strip().split('\n'))
