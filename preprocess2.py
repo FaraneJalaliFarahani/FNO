@@ -34,15 +34,15 @@ def main():
     # with open(inpath + 'embeddings/embeddings_{}.p'.format(year), 'rb') as f:
     #     sr_c_embs = pickle.load(f)
     concepts = ['concept1', 'concept2', 'concept3', 'concept4', 'concept5']
-    sr_c_embs = torch.rand(G.number_of_nodes(), len(concepts), 768)
+    c_sr_embs = torch.rand(len(concepts), G.number_of_nodes(), 768)
 
 
     # Create dictionary mapping concepts to subreddits
     c_sr_embs = defaultdict(dict)
-    for sr in G.nodes():
-        for c in sr_c_embs[sr]:
-            if c in concepts:
-                c_sr_embs[c][sr] = sr_c_embs[sr][c]
+    #for sr in G.nodes():
+    #    for c in sr_c_embs[sr]:
+    #        if c in concepts:
+    #            c_sr_embs[c][sr] = sr_c_embs[sr][c]
 
     # Store number of subreddits
     n_srs = G.number_of_nodes()
