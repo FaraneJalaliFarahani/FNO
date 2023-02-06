@@ -55,11 +55,12 @@ def main():
     x_list = list()
     for i in id2concept:
         c = id2concept[i]
+        print(c)
         x = torch.zeros(n_srs, 768)
         for j in id2sr:
             sr = id2sr[j]
             print(sr)
-            print(c_sr_embs[c])
+            print(c_sr_embs)
             x[j] = torch.tensor(c_sr_embs[i][j])
             #x[j] = np.nan
         nan_mask = torch.isnan(x)
