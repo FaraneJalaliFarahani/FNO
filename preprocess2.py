@@ -48,7 +48,7 @@ def main():
     n_srs = G.number_of_nodes()
 
     # Define look-up dictionaries for concepts and subreddits
-    id2concept = {i: concept for i, concept in enumerate(c_sr_embs.keys())}
+    id2concept = {i: concept for i, concept in concepts)}
     id2sr = {i: sr for i, sr in enumerate(G.nodes())}
 
     # Compute embedding matrix for all concepts
