@@ -35,7 +35,7 @@ def main():
     #     sr_c_embs = pickle.load(f)
     concepts = ['concept1', 'concept2', 'concept3', 'concept4', 'concept5']
     c_sr_embs = torch.rand(len(concepts), G.number_of_nodes(), 768)
-
+    print(c_sr_embs)
 
     # Create dictionary mapping concepts to subreddits
     c_sr_embs = defaultdict(dict)
