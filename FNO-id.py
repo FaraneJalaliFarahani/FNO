@@ -187,14 +187,16 @@ count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_kno
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
-ntrain = count_train
-ntest = count_test
+batch_size = 100
+ntrain = count_train // batch_size
+count_train = ntrain
+ntest = count_test // batch_size
+count_test = count_test
 dim =384
 sub = 2 #subsampling rate
 h = dim * 2 // sub #total grid size divided by the subsampling rate
 s = h
 
-batch_size = 5
 learning_rate = 0.001
 epochs = 100
 iterations = epochs*(ntrain//batch_size)
