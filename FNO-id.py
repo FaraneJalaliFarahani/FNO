@@ -228,17 +228,21 @@ x_test = torch.rand(count_test, dim)
 y_test = torch.rand(count_test, dim)
 
 for i, element in enumerate(train_pos_edges[0]):
-  x_train[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
+  if i <= count_train:
+    x_train[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
 
 for i, element in enumerate(train_pos_edges[1]):
-  y_train[i] = torch.from_numpy(dict_node_emb[element])
+  if i <= count_train:
+    y_train[i] = torch.from_numpy(dict_node_emb[element])
 
 
 for i, element in enumerate(test_pos_edges[0]):
-  x_test[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
+  if i <= count_test:
+    x_test[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
 
 for i, element in enumerate(test_pos_edges[1]):
-  y_test[i] = torch.from_numpy(dict_node_emb[element])
+  if i <= count_test:
+    y_test[i] = torch.from_numpy(dict_node_emb[element])
 
 
 
