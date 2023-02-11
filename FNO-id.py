@@ -3,6 +3,7 @@
 This file is the Fourier Neural Operator for 1D problem such as the (time-independent) Burgers equation discussed in Section 5.1 in the [paper](https://arxiv.org/pdf/2010.08895.pdf).
 """
 import torch
+import json
 import torch.nn.functional as F
 from timeit import default_timer
 from utilities3 import *
@@ -171,32 +172,105 @@ y_data = dataloader.read_field('u')[:,::sub]
 # y_test = y_data[-ntest:,:]
 
 ###################
-train_pos_edges = [[ 0,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  4,  4,  4,  4,  4,  5,  7,
-          8,  9, 10, 11, 11, 11, 12, 13, 13, 14, 14, 15, 15, 15, 17, 18, 19],
-        [ 1,  0, 10,  4,  7, 11, 12, 13, 20, 13, 15,  2,  5,  8, 14, 17,  4,  2,
-          4, 11,  1,  2,  9, 15,  2,  2,  3,  4, 18,  3, 11, 19,  4, 14, 15]]
-test_pos_edges=[[ 0, 15,  3,  0,  3],
-        [ 2, 16,  7, 10, 19]]
-x_21_random = torch.rand(21,768)
-x_train = torch.rand(35, 768)
-y_train = torch.rand(35, 768)
-x_test = torch.rand(5, 768)
-y_test = torch.rand(5, 768)
-dict_={}
-for i, x in enumerate(x_21_random):
-  dict_[i] = x
+
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+
+def relationship(dict_relation_emb ,filename_relation):
+  with open(filename_relation) as f:
+      for line in f:
+          words = line.strip().split("\t")
+          relation = words[1]
+          if relation in dict_relation_emb:
+            continue
+          else:
+            dict_relation_emb[relation] = model.encode(relation)
+      return dict_relation_emb
+
+
+### dictiony of nodes' embedding ###
+count = 0 
+dict_node_emb={}
+f = open('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
+data = json.load(f)
+for element in data:
+  description = data[element]["description"]
+  if description == "None" or description == [] or description == None:
+    continue
+  dict_node_emb[element] = model.encode(description)
+  count += 1
+
+
+### dictiony of relations' embedding ###
+d0={}
+d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
+dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
+
+
+def preprocess( dict_node_emb, filename):
+  count = 0
+  edges =[[],[]]
+  with open(filename) as f:
+      for line in f:
+          words = line.strip().split("\t")
+          if words[0] in dict_node_emb and words[2] in dict_node_emb:
+            count += 1
+            edges[0].append((words[0], words[1]))
+            edges[1].append(words[2])
+  return count, edges
+
+count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
+
+count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
+
+dim =384
+import torch
+x_train = torch.rand(count_train, dim)
+y_train = torch.rand(count_train, dim)
+x_test = torch.rand(count_test, dim)
+y_test = torch.rand(count_test, dim)
 
 for i, element in enumerate(train_pos_edges[0]):
-  x_train[element] = dict_[element]
+  x_train[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
 
 for i, element in enumerate(train_pos_edges[1]):
-  y_train[element] = dict_[element]
+  y_train[i] = torch.from_numpy(dict_node_emb[element])
+
 
 for i, element in enumerate(test_pos_edges[0]):
-  x_test[i] = dict_[element]
+  x_test[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
 
 for i, element in enumerate(test_pos_edges[1]):
-  y_test[i] = dict_[element]
+  y_test[i] = torch.from_numpy(dict_node_emb[element])
+
+
+
+# train_pos_edges = [[ 0,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  4,  4,  4,  4,  4,  5,  7,
+#           8,  9, 10, 11, 11, 11, 12, 13, 13, 14, 14, 15, 15, 15, 17, 18, 19],
+#         [ 1,  0, 10,  4,  7, 11, 12, 13, 20, 13, 15,  2,  5,  8, 14, 17,  4,  2,
+#           4, 11,  1,  2,  9, 15,  2,  2,  3,  4, 18,  3, 11, 19,  4, 14, 15]]
+# test_pos_edges=[[ 0, 15,  3,  0,  3],
+#         [ 2, 16,  7, 10, 19]]
+# x_21_random = torch.rand(21,768)
+# x_train = torch.rand(35, 768)
+# y_train = torch.rand(35, 768)
+# x_test = torch.rand(5, 768)
+# y_test = torch.rand(5, 768)
+# dict_={}
+# for i, x in enumerate(x_21_random):
+#   dict_[i] = x
+
+# for i, element in enumerate(train_pos_edges[0]):
+#   x_train[element] = dict_[element]
+
+# for i, element in enumerate(train_pos_edges[1]):
+#   y_train[element] = dict_[element]
+
+# for i, element in enumerate(test_pos_edges[0]):
+#   x_test[i] = dict_[element]
+
+# for i, element in enumerate(test_pos_edges[1]):
+#   y_test[i] = dict_[element]
 
 
   ###################
