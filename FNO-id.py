@@ -140,6 +140,7 @@ class FNO1d(nn.Module):
 ################################################################
 #  configurations
 ################################################################
+dict_node_emb={}
 def preprocess( dict_node_emb, filename):
   count = 0
   edges =[[],[]]
@@ -207,8 +208,8 @@ def relationship(dict_relation_emb ,filename_relation):
 
 
 ### dictiony of nodes' embedding ###
-count = 0 
-dict_node_emb={}
+
+
 f = open('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
 data = json.load(f)
 for element in data:
