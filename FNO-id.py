@@ -140,8 +140,26 @@ class FNO1d(nn.Module):
 ################################################################
 #  configurations
 ################################################################
-ntrain = 35
-ntest = 5
+def preprocess( dict_node_emb, filename):
+  count = 0
+  edges =[[],[]]
+  with open(filename) as f:
+      for line in f:
+          words = line.strip().split("\t")
+          if words[0] in dict_node_emb and words[2] in dict_node_emb:
+            count += 1
+            edges[0].append((words[0], words[1]))
+            edges[1].append(words[2])
+  return count, edges
+
+count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
+
+count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
+
+
+
+ntrain = count_train
+ntest = count_test
 dim =384
 sub = 2 #subsampling rate
 h = dim * 2 // sub #total grid size divided by the subsampling rate
@@ -207,21 +225,6 @@ d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt
 dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
-def preprocess( dict_node_emb, filename):
-  count = 0
-  edges =[[],[]]
-  with open(filename) as f:
-      for line in f:
-          words = line.strip().split("\t")
-          if words[0] in dict_node_emb and words[2] in dict_node_emb:
-            count += 1
-            edges[0].append((words[0], words[1]))
-            edges[1].append(words[2])
-  return count, edges
-
-count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
-
-count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
 
