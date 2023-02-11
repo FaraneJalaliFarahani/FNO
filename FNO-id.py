@@ -142,9 +142,9 @@ class FNO1d(nn.Module):
 ################################################################
 ntrain = 35
 ntest = 5
-
+dim =384
 sub = 2 #subsampling rate
-h = 1536 // sub #total grid size divided by the subsampling rate
+h = dim * 2 // sub #total grid size divided by the subsampling rate
 s = h
 
 batch_size = 5
@@ -223,8 +223,8 @@ count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_kno
 
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
-dim =384
-import torch
+
+
 x_train = torch.rand(count_train, dim)
 y_train = torch.rand(count_train, dim)
 x_test = torch.rand(count_test, dim)
