@@ -7,7 +7,8 @@ import json
 import torch.nn.functional as F
 from timeit import default_timer
 from utilities3 import *
-
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 torch.manual_seed(0)
 np.random.seed(0)
 
@@ -140,7 +141,35 @@ class FNO1d(nn.Module):
 ################################################################
 #  configurations
 ################################################################
+def relationship(dict_relation_emb ,filename_relation):
+  with open(filename_relation) as f:
+      for line in f:
+          words = line.strip().split("\t")
+          relation = words[1]
+          if relation in dict_relation_emb:
+            continue
+          else:
+            dict_relation_emb[relation] = model.encode(relation)
+      return dict_relation_emb
+
+### dictiony of relations' embedding ###
+d0={}
+d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
+dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
+
+
+### dictiony of nodes' embedding ###
+
 dict_node_emb={}
+f = open('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
+data = json.load(f)
+for element in data:
+  description = data[element]["description"]
+  if description == "None" or description == [] or description == None:
+    continue
+  dict_node_emb[element] = model.encode(description)
+
+
 def preprocess( dict_node_emb, filename):
   count = 0
   edges =[[],[]]
@@ -156,7 +185,6 @@ def preprocess( dict_node_emb, filename):
 count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
 
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
-
 
 
 ntrain = count_train
@@ -191,43 +219,6 @@ y_data = dataloader.read_field('u')[:,::sub]
 # y_test = y_data[-ntest:,:]
 
 ###################
-
-from sentence_transformers import SentenceTransformer
-model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-
-def relationship(dict_relation_emb ,filename_relation):
-  with open(filename_relation) as f:
-      for line in f:
-          words = line.strip().split("\t")
-          relation = words[1]
-          if relation in dict_relation_emb:
-            continue
-          else:
-            dict_relation_emb[relation] = model.encode(relation)
-      return dict_relation_emb
-
-
-### dictiony of nodes' embedding ###
-
-
-f = open('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
-data = json.load(f)
-for element in data:
-  description = data[element]["description"]
-  if description == "None" or description == [] or description == None:
-    continue
-  dict_node_emb[element] = model.encode(description)
-  count += 1
-
-
-### dictiony of relations' embedding ###
-d0={}
-d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
-dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
-
-
-
-
 
 x_train = torch.rand(count_train, dim)
 y_train = torch.rand(count_train, dim)
