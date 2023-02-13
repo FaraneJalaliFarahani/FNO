@@ -188,10 +188,10 @@ count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_know
 
 
 batch_size = 100
-ntrain = count_train // batch_size
+ntrain = count_train - count_train % batch_size
 count_train = ntrain
-ntest = count_test // batch_size
-count_test = count_test
+ntest = count_test -count_test % batch_size
+count_test = ntest
 dim =384
 sub = 2 #subsampling rate
 h = dim * 2 // sub #total grid size divided by the subsampling rate
@@ -228,19 +228,22 @@ x_test = torch.rand(count_test, dim)
 y_test = torch.rand(count_test, dim)
 
 for i in range (count_train):
-    element = train_pos_edges[i][0]
+    
+    #print(train_pos_edges[0])
+    element = train_pos_edges[0][i]
+    #print("--->", element)
     x_train[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
 
 for i in range (count_train):
-    element = train_pos_edges[i][0]
+    element = train_pos_edges[1][i]
     y_train[i] = torch.from_numpy(dict_node_emb[element])
 
 for i in range (count_test):
-    element = test_pos_edges[i][0]
+    element = test_pos_edges[0][i]
     x_test[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
     
 for i in range (count_test):
-    element = test_pos_edges[i][0]
+    element = test_pos_edges[1][i]
     y_test[i] = torch.from_numpy(dict_node_emb[element])
 
 
