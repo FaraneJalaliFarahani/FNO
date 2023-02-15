@@ -195,9 +195,6 @@ dict_node_emb = node('/content/datasets_knowledge_embedding/FB15k-237/entity2wik
 count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
-print("test_pos_edges", test_pos_edges)
-print("train_pos_edges", train_pos_edges)
-
 
 def train(count_train, count_test, train_pos_edges, test_pos_edges):
     batch_size = 10
@@ -304,7 +301,8 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
         with torch.no_grad():
             for x, y in test_loader:
                 x, y = x.cuda(), y.cuda()
-
+                print(y.shape)
+                print(y_test.shape)
                 out = model(x)
                 test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
@@ -316,22 +314,29 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
         print(ep, t2-t1, train_mse, train_l2, test_l2)
 
     # torch.save(model, 'model/ns_fourier_burgers')
-    pred = torch.zeros(y_test.shape)
-    index = 0
-    test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=1, shuffle=False)
-    with torch.no_grad():
-        for x, y in test_loader:
-            test_l2 = 0
-            x, y = x.cuda(), y.cuda()
+    #pred = torch.zeros(y_test.shape)
+    #index = 0
+    #test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=1, shuffle=False)
+    #with torch.no_grad():
+    #    for x, y in test_loader:
+    #        test_l2 = 0
+    #        x, y = x.cuda(), y.cuda()
 
-            out = model(x).view(-1)
-            pred[index] = out
+    #       out = model(x).view(-1)
+    #        pred[index] = out
 
-            test_l2 += myloss(out.view(1, -1), y.view(1, -1)).item()
-            print(index, test_l2)
-            index = index + 1
+    #       test_l2 += myloss(out.view(1, -1), y.view(1, -1)).item()
+    #       print(index, test_l2)
+    #       index = index + 1
 
     # scipy.io.savemat('pred/burger_test.mat', mdict={'pred': pred.cpu().numpy()})
 
     
     
+
+#print("test_pos_edges", test_pos_edges)
+for key in test_pos_edges:
+  if key in train_pos_edges:
+    print("RESULT FOR", key)
+    train(count_train[key], count_test[key], train_pos_edges[key], test_pos_edges[key])
+
