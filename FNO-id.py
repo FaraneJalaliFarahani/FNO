@@ -195,6 +195,8 @@ dict_node_emb = node('/content/datasets_knowledge_embedding/FB15k-237/entity2wik
 count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
+print("test_pos_edges", test_pos_edges)
+print("train_pos_edges", train_pos_edges)
 
 
 def train(count_train, count_test, train_pos_edges, test_pos_edges):
