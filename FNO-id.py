@@ -158,7 +158,7 @@ def node(file_name):
       if description == "None" or description == [] or description == None:
         continue
       dict_node_emb[element] = model.encode(description)
-return dict_node_emb
+    return dict_node_emb
 
 
 def preprocess( dict_node_emb, filename):
