@@ -1,7 +1,3 @@
-"""
-@author: Zongyi Li
-This file is the Fourier Neural Operator for 1D problem such as the (time-independent) Burgers equation discussed in Section 5.1 in the [paper](https://arxiv.org/pdf/2010.08895.pdf).
-"""
 import torch
 import json
 import torch.nn.functional as F
@@ -141,6 +137,7 @@ class FNO1d(nn.Module):
 ################################################################
 #  configurations
 ################################################################
+
 def relationship(dict_relation_emb ,filename_relation):
   with open(filename_relation) as f:
       for line in f:
@@ -152,201 +149,187 @@ def relationship(dict_relation_emb ,filename_relation):
             dict_relation_emb[relation] = model.encode(relation)
       return dict_relation_emb
 
-### dictiony of relations' embedding ###
-d0={}
-d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
-dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
-
-
-### dictiony of nodes' embedding ###
-
-dict_node_emb={}
-f = open('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
-data = json.load(f)
-for element in data:
-  description = data[element]["description"]
-  if description == "None" or description == [] or description == None:
-    continue
-  dict_node_emb[element] = model.encode(description)
+def node(file_name):
+    dict_node_emb={}
+    f = open(file_name)
+    data = json.load(f)
+    for element in data:
+      description = data[element]["description"]
+      if description == "None" or description == [] or description == None:
+        continue
+      dict_node_emb[element] = model.encode(description)
+return dict_node_emb
 
 
 def preprocess( dict_node_emb, filename):
-  count = 0
-  edges =[[],[]]
+  # words[0]: head
+  # words[1]: relation
+  # words[2]: tail
+  
+  edges = {}
+  count = {}
   with open(filename) as f:
       for line in f:
           words = line.strip().split("\t")
           if words[0] in dict_node_emb and words[2] in dict_node_emb:
-            count += 1
-            edges[0].append((words[0], words[1]))
-            edges[1].append(words[2])
+            
+            if words[1] in edges:
+                edges[words[1]][0].append(words[0])
+                edges[words[1]][1].append(words[2])
+                count[words[1]] += 1
+            else:
+                edges[words[1]] = [[words[0]],[words[2]]]
+                count[words[1]] = 0
   return count, edges
 
-count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
 
+############ dictiony of relations' embedding ###########################
+d0={}
+d1 = relationship(d0, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
+dict_relation_emb = relationship(d1, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
+
+############ dictiony of nodes' embedding ###############################
+dict_node_emb = node('/content/datasets_knowledge_embedding/FB15k-237/entity2wikidata.json')
+
+############ preprocess data for test and train #########################
+count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/train.txt")
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
-batch_size = 100
-ntrain = count_train - count_train % batch_size
-count_train = ntrain
-ntest = count_test -count_test % batch_size
-count_test = ntest
-dim =384
-sub = 2 #subsampling rate
-h = dim * 2 // sub #total grid size divided by the subsampling rate
-s = h
 
-learning_rate = 0.001
-epochs = 100
-iterations = epochs*(ntrain//batch_size)
+def train(count_train, count_test, train_pos_edges, test_pos_edges):
+    batch_size = 10
+    ntrain = count_train - count_train % batch_size
+    count_train = ntrain
+    ntest = count_test -count_test % batch_size
+    count_test = ntest
+    dim =384
+    sub = 2 #subsampling rate
+    h = dim * 2 // sub #total grid size divided by the subsampling rate
+    s = h
 
-modes = 16
-width = 64
+    learning_rate = 0.001
+    epochs = 50
+    iterations = epochs*(ntrain//batch_size)
 
-################################################################
-# read data
-################################################################
+    modes = 16
+    width = 64
 
-# Data is of the shape (number of samples, grid size)
-dataloader = MatReader('data/burgers_data_R10.mat')
-x_data = dataloader.read_field('a')[:,::sub]
-y_data = dataloader.read_field('u')[:,::sub]
+    ###################################################
+    # read data
+    ###################################################
 
-# x_train = x_data[:ntrain,:]
-# print(type(x_train))
-# y_train = y_data[:ntrain,:]
-# print(type(y_train))
-# x_test = x_data[-ntest:,:]
-# y_test = y_data[-ntest:,:]
+    # Data is of the shape (number of samples, grid size)
+    dataloader = MatReader('data/burgers_data_R10.mat')
+    x_data = dataloader.read_field('a')[:,::sub]
+    y_data = dataloader.read_field('u')[:,::sub]
 
-###################
+    # x_train = x_data[:ntrain,:]
+    # print(type(x_train))
+    # y_train = y_data[:ntrain,:]
+    # print(type(y_train))
+    # x_test = x_data[-ntest:,:]
+    # y_test = y_data[-ntest:,:]
 
-x_train = torch.rand(count_train, dim)
-y_train = torch.rand(count_train, dim)
-x_test = torch.rand(count_test, dim)
-y_test = torch.rand(count_test, dim)
+    ##################################
 
-for i in range (count_train):
-    
-    #print(train_pos_edges[0])
-    element = train_pos_edges[0][i]
-    #print("--->", element)
-    x_train[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
+    x_train = torch.rand(count_train, dim)
+    y_train = torch.rand(count_train, dim)
+    x_test = torch.rand(count_test, dim)
+    y_test = torch.rand(count_test, dim)
 
-for i in range (count_train):
-    element = train_pos_edges[1][i]
-    y_train[i] = torch.from_numpy(dict_node_emb[element])
+    for i in range (count_train):
 
-for i in range (count_test):
-    element = test_pos_edges[0][i]
-    x_test[i] = torch.from_numpy(dict_node_emb[element[0]] + dict_relation_emb[element[1]])
-    
-for i in range (count_test):
-    element = test_pos_edges[1][i]
-    y_test[i] = torch.from_numpy(dict_node_emb[element])
+        #print(train_pos_edges[0])
+        head = train_pos_edges[0][i]
+        #print("--->", element)
+        x_train[i] = torch.from_numpy(dict_node_emb[head])
 
+    for i in range (count_train):
+        tail = train_pos_edges[1][i]
+        y_train[i] = torch.from_numpy(dict_node_emb[tail])
 
+    for i in range (count_test):
+        head = test_pos_edges[0][i]
+        x_test[i] = torch.from_numpy(dict_node_emb[head])
 
-# train_pos_edges = [[ 0,  1,  1,  2,  2,  2,  2,  2,  2,  3,  3,  4,  4,  4,  4,  4,  5,  7,
-#           8,  9, 10, 11, 11, 11, 12, 13, 13, 14, 14, 15, 15, 15, 17, 18, 19],
-#         [ 1,  0, 10,  4,  7, 11, 12, 13, 20, 13, 15,  2,  5,  8, 14, 17,  4,  2,
-#           4, 11,  1,  2,  9, 15,  2,  2,  3,  4, 18,  3, 11, 19,  4, 14, 15]]
-# test_pos_edges=[[ 0, 15,  3,  0,  3],
-#         [ 2, 16,  7, 10, 19]]
-# x_21_random = torch.rand(21,768)
-# x_train = torch.rand(35, 768)
-# y_train = torch.rand(35, 768)
-# x_test = torch.rand(5, 768)
-# y_test = torch.rand(5, 768)
-# dict_={}
-# for i, x in enumerate(x_21_random):
-#   dict_[i] = x
-
-# for i, element in enumerate(train_pos_edges[0]):
-#   x_train[element] = dict_[element]
-
-# for i, element in enumerate(train_pos_edges[1]):
-#   y_train[element] = dict_[element]
-
-# for i, element in enumerate(test_pos_edges[0]):
-#   x_test[i] = dict_[element]
-
-# for i, element in enumerate(test_pos_edges[1]):
-#   y_test[i] = dict_[element]
+    for i in range (count_test):
+        tail = test_pos_edges[1][i]
+        y_test[i] = torch.from_numpy(dict_node_emb[tail])
 
 
-  ###################
+    x_train = x_train.reshape(ntrain,s,1)
+    x_test = x_test.reshape(ntest,s,1)
 
-x_train = x_train.reshape(ntrain,s,1)
-x_test = x_test.reshape(ntest,s,1)
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_train, y_train), batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=batch_size, shuffle=False)
 
-train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_train, y_train), batch_size=batch_size, shuffle=True)
-test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=batch_size, shuffle=False)
+    # model
+    model = FNO1d(modes, width).cuda()
+    print(count_params(model))
 
-# model
-model = FNO1d(modes, width).cuda()
-print(count_params(model))
+    ################################################################
+    # training and evaluation
+    ################################################################
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=iterations)
 
-################################################################
-# training and evaluation
-################################################################
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=iterations)
-
-myloss = LpLoss(size_average=False)
-for ep in range(epochs):
-    model.train()
-    t1 = default_timer()
-    train_mse = 0
-    train_l2 = 0
-    for x, y in train_loader:
-        x, y = x.cuda(), y.cuda()
-
-        optimizer.zero_grad()
-        out = model(x)
-        #print("x",  x.shape)
-        #print("y", y.shape)
-        #print("out",  out.shape)
-        mse = F.mse_loss(out.view(batch_size, -1), y.view(batch_size, -1), reduction='mean')
-        l2 = myloss(out.view(batch_size, -1), y.view(batch_size, -1))
-        l2.backward() # use the l2 relative loss
-
-        optimizer.step()
-        scheduler.step()
-        train_mse += mse.item()
-        train_l2 += l2.item()
-
-    model.eval()
-    test_l2 = 0.0
-    with torch.no_grad():
-        for x, y in test_loader:
+    myloss = LpLoss(size_average=False)
+    for ep in range(epochs):
+        model.train()
+        t1 = default_timer()
+        train_mse = 0
+        train_l2 = 0
+        for x, y in train_loader:
             x, y = x.cuda(), y.cuda()
 
+            optimizer.zero_grad()
             out = model(x)
-            test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
+            #print("x",  x.shape)
+            #print("y", y.shape)
+            #print("out",  out.shape)
+            mse = F.mse_loss(out.view(batch_size, -1), y.view(batch_size, -1), reduction='mean')
+            l2 = myloss(out.view(batch_size, -1), y.view(batch_size, -1))
+            l2.backward() # use the l2 relative loss
 
-    train_mse /= len(train_loader)
-    train_l2 /= ntrain
-    test_l2 /= ntest
+            optimizer.step()
+            scheduler.step()
+            train_mse += mse.item()
+            train_l2 += l2.item()
 
-    t2 = default_timer()
-    print(ep, t2-t1, train_mse, train_l2, test_l2)
+        model.eval()
+        test_l2 = 0.0
+        with torch.no_grad():
+            for x, y in test_loader:
+                x, y = x.cuda(), y.cuda()
 
-# torch.save(model, 'model/ns_fourier_burgers')
-pred = torch.zeros(y_test.shape)
-index = 0
-test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=1, shuffle=False)
-with torch.no_grad():
-    for x, y in test_loader:
-        test_l2 = 0
-        x, y = x.cuda(), y.cuda()
+                out = model(x)
+                test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
-        out = model(x).view(-1)
-        pred[index] = out
+        train_mse /= len(train_loader)
+        train_l2 /= ntrain
+        test_l2 /= ntest
 
-        test_l2 += myloss(out.view(1, -1), y.view(1, -1)).item()
-        print(index, test_l2)
-        index = index + 1
+        t2 = default_timer()
+        print(ep, t2-t1, train_mse, train_l2, test_l2)
 
-# scipy.io.savemat('pred/burger_test.mat', mdict={'pred': pred.cpu().numpy()})
+    # torch.save(model, 'model/ns_fourier_burgers')
+    pred = torch.zeros(y_test.shape)
+    index = 0
+    test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=1, shuffle=False)
+    with torch.no_grad():
+        for x, y in test_loader:
+            test_l2 = 0
+            x, y = x.cuda(), y.cuda()
+
+            out = model(x).view(-1)
+            pred[index] = out
+
+            test_l2 += myloss(out.view(1, -1), y.view(1, -1)).item()
+            print(index, test_l2)
+            index = index + 1
+
+    # scipy.io.savemat('pred/burger_test.mat', mdict={'pred': pred.cpu().numpy()})
+
+    
+    
