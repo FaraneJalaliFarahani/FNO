@@ -196,6 +196,18 @@ count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_kno
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
+def cosine_similarity(vector, matrix):
+
+    # Calculate the dot product between the vector and each row of the matrix
+    dot_product = torch.mm(matrix, vector.unsqueeze(1))
+    # Calculate the magnitude of the vector and each row of the matrix
+    vector_magnitude = torch.norm(vector)
+    matrix_magnitude = torch.norm(matrix, dim=1)
+    # Calculate the cosine similarity between the vector and each row of the matrix
+    cosine_sim = dot_product.squeeze() / (vector_magnitude * matrix_magnitude)
+    return cosine_sim
+  
+
 def train(count_train, count_test, train_pos_edges, test_pos_edges):
     batch_size = 10
     ntrain = count_train - count_train % batch_size
@@ -301,9 +313,17 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
         with torch.no_grad():
             for x, y in test_loader:
                 x, y = x.cuda(), y.cuda()
-                print(y.shape)
-                print(y_test.shape)
+                print(len(y))
                 out = model(x)
+                index_list=[]
+                for i in range(len(out)):
+                  whole = cosine_similarity(out[i], y_test)
+                  whole_sorted = torch.sort(whole)[0]
+                  it = cosine_similarity(out[i], y[i])
+                  index = (whole_sorted == it).nonzero(as_tuple=True)[0] + 1 #MRR from 1 not 0
+                  index_list.append(index)
+                print(index_list)
+                
                 test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
         train_mse /= len(train_loader)
