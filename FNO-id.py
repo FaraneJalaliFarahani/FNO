@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
 torch.manual_seed(0)
 np.random.seed(0)
-
+cosine= torch.nn.CosineSimilarity(dim=1)
 
 ################################################################
 #  1d fourier layer
@@ -196,17 +196,6 @@ count_train,  train_pos_edges = preprocess(dict_node_emb, "/content/datasets_kno
 count_test,  test_pos_edges = preprocess( dict_node_emb, "/content/datasets_knowledge_embedding/FB15k-237/test.txt")
 
 
-def cosine_similarity(vector, matrix):
-
-    # Calculate the dot product between the vector and each row of the matrix
-    dot_product = torch.mm(matrix, vector.unsqueeze(1))
-    # Calculate the magnitude of the vector and each row of the matrix
-    vector_magnitude = torch.norm(vector)
-    matrix_magnitude = torch.norm(matrix, dim=1)
-    # Calculate the cosine similarity between the vector and each row of the matrix
-    cosine_sim = dot_product.squeeze() / (vector_magnitude * matrix_magnitude)
-    return cosine_sim
-  
 
 def train(count_train, count_test, train_pos_edges, test_pos_edges):
     batch_size = 10
@@ -275,6 +264,10 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_train, y_train), batch_size=batch_size, shuffle=True)
     test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=batch_size, shuffle=False)
 
+    x_train =  x_train.to(torch.device("cuda:0"))
+    y_train =  y_train.to(torch.device("cuda:0"))
+    x_test =  x_test.to(torch.device("cuda:0"))
+    y_test =  y_test.to(torch.device("cuda:0"))   
     # model
     model = FNO1d(modes, width).cuda()
     print(count_params(model))
@@ -317,9 +310,15 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
                 out = model(x)
                 index_list=[]
                 for i in range(len(out)):
-                  whole = cosine_similarity(out[i], y_test)
+                  print(y_test.get_device())
+                  print(out[i].get_device())
+                  whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
+                  print(whole.shape)
+                  print(whole)
                   whole_sorted = torch.sort(whole)[0]
-                  it = cosine_similarity(out[i], y[i])
+                  it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
+                  print(it.shape)
+                  print(it)
                   index = (whole_sorted == it).nonzero(as_tuple=True)[0] + 1 #MRR from 1 not 0
                   index_list.append(index)
                 print(index_list)
