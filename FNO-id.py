@@ -221,9 +221,9 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     ###################################################
 
     # Data is of the shape (number of samples, grid size)
-    dataloader = MatReader('data/burgers_data_R10.mat')
-    x_data = dataloader.read_field('a')[:,::sub]
-    y_data = dataloader.read_field('u')[:,::sub]
+    #dataloader = MatReader('data/burgers_data_R10.mat')
+    #x_data = dataloader.read_field('a')[:,::sub]
+    #y_data = dataloader.read_field('u')[:,::sub]
 
     # x_train = x_data[:ntrain,:]
     # print(type(x_train))
