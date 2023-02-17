@@ -202,6 +202,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     ntrain = count_train - count_train % batch_size
     count_train = ntrain
     ntest = count_test -count_test % batch_size
+    print("___>", ntrain, ntest)
     count_test = ntest
     dim =384
     sub = 2 #subsampling rate
@@ -209,7 +210,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     s = h
 
     learning_rate = 0.001
-    epochs = 50
+    epochs = 2
     iterations = epochs*(ntrain//batch_size)
 
     modes = 16
@@ -310,16 +311,17 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
                 out = model(x)
                 index_list=[]
                 for i in range(len(out)):
-                  print(y_test.get_device())
-                  print(out[i].get_device())
+                  #print(y_test.get_device())
+                  #print(out[i].get_device())
                   whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
-                  print(whole.shape)
-                  print(whole)
+                  #print(whole.shape)
+                  print("whole", whole)
                   whole_sorted = torch.sort(whole)[0]
                   it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
-                  print(it.shape)
-                  print(it)
-                  index = (whole_sorted == it).nonzero(as_tuple=True)[0] + 1 #MRR from 1 not 0
+                  #print(it.shape)
+                  print("it", it)
+                  index = torch.where(whole_sorted == it[0])
+                  print("index", index)
                   index_list.append(index)
                 print(index_list)
                 
