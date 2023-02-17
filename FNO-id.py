@@ -315,14 +315,17 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
             out = model(x)
             index_list=[]
             for i in range(len(out)):
-              #print(y_test.get_device())
+              print(y_test.data.shape)
+              print(x_test.data.shape)
+              print(y_train.data.shape)
+              print(x_train.data.shape)                
               #print(out[i].get_device())
               whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
-              #print(whole.shape)
+              print(whole.shape)
               print("whole", whole)
               whole_sorted = torch.sort(whole)[0]
               it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
-              #print(it.shape)
+              print(it.shape)
               print("it", it)
               index = torch.where(whole_sorted == it[0])
               print("index", index)
