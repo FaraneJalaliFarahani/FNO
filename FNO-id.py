@@ -301,38 +301,37 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
             scheduler.step()
             train_mse += mse.item()
             train_l2 += l2.item()
-
-        model.eval()
-        test_l2 = 0.0
-        with torch.no_grad():
-            for x, y in test_loader:
-                x, y = x.cuda(), y.cuda()
-                print(len(y))
-                out = model(x)
-                index_list=[]
-                for i in range(len(out)):
-                  #print(y_test.get_device())
-                  #print(out[i].get_device())
-                  whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
-                  #print(whole.shape)
-                  print("whole", whole)
-                  whole_sorted = torch.sort(whole)[0]
-                  it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
-                  #print(it.shape)
-                  print("it", it)
-                  index = torch.where(whole_sorted == it[0])
-                  print("index", index)
-                  index_list.append(index)
-                print(index_list)
+            train_mse /= len(train_loader)
+            train_l2 /= ntrain
+            #test_l2 /= ntest
+            t2 = default_timer()
+            print(ep, t2-t1, train_mse, train_l2)
+            model.eval()
+        #test_l2 = 0.0
+    with torch.no_grad():
+        for x, y in test_loader:
+            x, y = x.cuda(), y.cuda()
+            print(len(y))
+            out = model(x)
+            index_list=[]
+            for i in range(len(out)):
+              #print(y_test.get_device())
+              #print(out[i].get_device())
+              whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
+              #print(whole.shape)
+              print("whole", whole)
+              whole_sorted = torch.sort(whole)[0]
+              it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
+              #print(it.shape)
+              print("it", it)
+              index = torch.where(whole_sorted == it[0])
+              print("index", index)
+              index_list.append(index)
+            print(index_list)
                 
-                test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
+                #test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
-        train_mse /= len(train_loader)
-        train_l2 /= ntrain
-        test_l2 /= ntest
 
-        t2 = default_timer()
-        print(ep, t2-t1, train_mse, train_l2, test_l2)
 
     # torch.save(model, 'model/ns_fourier_burgers')
     #pred = torch.zeros(y_test.shape)
