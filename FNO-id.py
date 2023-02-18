@@ -335,8 +335,9 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
               #print("index:::", index[0].item())
               rank_list.append(rank)
               index_y += 1 
-              print("RR", rank)
-        print("MRR", sum(rank_list)/ len(rank_list))    
+              #print("RR", rank)
+        print("MRR")
+        return sum(rank_list) / len(rank_list)
                 #test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
 
@@ -363,8 +364,11 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     
 
 #print("test_pos_edges", test_pos_edges)
+MRR_list =[]
 for key in test_pos_edges:
   if key in train_pos_edges:
     print("RESULT FOR", key)
-    train(count_train[key], count_test[key], train_pos_edges[key], test_pos_edges[key])
+    MRR = train(count_train[key], count_test[key], train_pos_edges[key], test_pos_edges[key])
+    MRR_list.append(MRR)
+print(">>>Final MRR:", sum(MRR_list)/ len(MRR_list))
 
