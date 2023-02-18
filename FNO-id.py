@@ -336,7 +336,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
               rank_list.append(rank)
               index_y += 1 
               print("RR", rank)
-        print("RR", sum(rank_list)/ len(rank_list))    
+        print("MRR", sum(rank_list)/ len(rank_list))    
                 #test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
 
