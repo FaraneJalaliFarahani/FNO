@@ -369,6 +369,7 @@ for key in test_pos_edges:
   if key in train_pos_edges:
     print("RESULT FOR", key)
     MRR = train(count_train[key], count_test[key], train_pos_edges[key], test_pos_edges[key])
+    Print(MRR)
     MRR_list.append(MRR)
 print(">>>Final MRR:", sum(MRR_list)/ len(MRR_list))
 
