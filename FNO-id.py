@@ -210,7 +210,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     s = h
 
     learning_rate = 0.001
-    epochs = 2
+    epochs = 50
     iterations = epochs*(ntrain//batch_size)
 
     modes = 16
@@ -271,7 +271,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
     y_test =  y_test.to(torch.device("cuda:0"))   
     # model
     model = FNO1d(modes, width).cuda()
-    print(count_params(model))
+    #print(count_params(model))
 
     ################################################################
     # training and evaluation
@@ -305,32 +305,37 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
             train_l2 /= ntrain
             #test_l2 /= ntest
             t2 = default_timer()
-            print(ep, t2-t1, train_mse, train_l2)
+            #print(ep, t2-t1, train_mse, train_l2)
             model.eval()
         #test_l2 = 0.0
     with torch.no_grad():
+        index_y = 0 
+        rank_list=[]
         for x, y in test_loader:
             x, y = x.cuda(), y.cuda()
-            print(len(y))
+            
+            #print(len(y))
             out = model(x)
-            index_list=[]
+            
             for i in range(len(out)):
-              print(y_test.data.shape)
-              print(x_test.data.shape)
-              print(y_train.data.shape)
-              print(x_train.data.shape)                
+              
+              
+              
+              #print(y_test.data.shape)
+              #rint(y_train.data.shape)
               #print(out[i].get_device())
               whole =  cosine(out[i].view(-1, dim), y_test.view(-1, dim))
-              print(whole.shape)
-              print("whole", whole)
               whole_sorted = torch.sort(whole)[0]
-              it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
-              print(it.shape)
-              print("it", it)
-              index = torch.where(whole_sorted == it[0])
-              print("index", index)
-              index_list.append(index)
-            print(index_list)
+              index = torch.where(torch.sort(whole)[1] == index_y) 
+              rank = 1/(index[0].item() + 1)
+              #it =  cosine(out[i].view(-1, dim), y[i].view(-1, dim))
+              #print(it.shape)
+              #print("it", it)
+              
+              #print("index:::", index[0].item())
+              rank_list.append(rank)
+              index_y += 1 
+            print("MRR", sum(rank_list)/len(rank_list))
                 
                 #test_l2 += myloss(out.view(batch_size, -1), y.view(batch_size, -1)).item()
 
