@@ -310,6 +310,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
         #test_l2 = 0.0
     with torch.no_grad():
         index_y = 0 
+        print(index_y)
         rank_list=[]
         for x, y in test_loader:
             x, y = x.cuda(), y.cuda()
@@ -320,7 +321,7 @@ def train(count_train, count_test, train_pos_edges, test_pos_edges):
             for i in range(len(out)):
               
               
-              
+         
               #print(y_test.data.shape)
               #rint(y_train.data.shape)
               #print(out[i].get_device())
